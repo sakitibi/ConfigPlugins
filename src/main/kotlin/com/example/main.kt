@@ -1,109 +1,106 @@
+// Copyright 2025 SKNewRoles
 package com.example
 
 import com.mojang.brigadier.arguments.StringArgumentType
+import com.mojang.brigadier.arguments.BoolArgumentType
 import net.fabricmc.api.ModInitializer
 import net.fabricmc.fabric.api.command.v2.CommandRegistrationCallback
 import net.minecraft.nbt.NbtCompound
-import net.minecraft.nbt.NbtString
 import net.minecraft.server.MinecraftServer
 import net.minecraft.server.command.CommandManager
 import net.minecraft.server.command.ServerCommandSource
 import net.minecraft.text.Text
 import net.minecraft.world.PersistentState
 import net.minecraft.world.PersistentStateManager
-import java.util.function.Supplier
 import net.minecraft.server.network.ServerPlayerEntity
-import net.minecraft.entity.Entity
-import com.mojang.brigadier.arguments.BoolArgumentType
 
 object ConfigPlugins : ModInitializer {
 
-    // Boolean型で扱う設定キーのセット（後から追加しやすい）
-    private val booleanConfigKeys = mutableSetOf("analytics", "tcm")
+    enum class SettingType { BOOLEAN, STRING, NUMBER }
 
-    // すべての設定は変更可かどうかで管理（trueなら変更不可）
-    private val configDefinitions = mutableMapOf(
-        "analytics" to false,
-        "tcm" to false,
-        "sys" to true
+    data class NumberConstraint(val min: Int, val max: Int)
+    data class ConfigDefinition(
+        val type: SettingType,
+        val locked: Boolean = false,
+        val numberConstraint: NumberConstraint? = null
     )
 
-    // コマンド登録のときBoolean設定はBoolArgumentTypeで引数を受け取る
-override fun onInitialize() {
+    private val configDefinitions = mutableMapOf(
+        "analytics" to ConfigDefinition(SettingType.BOOLEAN),
+        "tcm" to ConfigDefinition(SettingType.BOOLEAN),
+        "settings" to ConfigDefinition(SettingType.STRING),
+        // 例 "data" to ConfigDefinition(SettingType.NUMBER, numberConstraint = NumberConstraint(min, max)),
+        "sys" to ConfigDefinition(SettingType.STRING, locked = true)
+    )
+
+    override fun onInitialize() {
         CommandRegistrationCallback.EVENT.register { dispatcher, _, _ ->
             val root = CommandManager.literal("config")
 
-            for ((key, locked) in configDefinitions) {
-                if (locked) continue
+            for ((key, def) in configDefinitions) {
+                if (def.locked) continue
 
-                if (key in booleanConfigKeys) {
-                    // Boolean型設定
-                    root.then(
-                        CommandManager.literal(key)
-                            .then(
-                                CommandManager.argument("value", BoolArgumentType.bool())
-                                    .executes { context ->
-                                        val value = BoolArgumentType.getBool(context, "value")
-                                        val source = context.source
-                                        val player = source.entity as? ServerPlayerEntity ?: run {
-                                            source.sendError(Text.literal("このコマンドはプレイヤーのみ実行可能です。"))
-                                            return@executes 0
-                                        }
-                                        val getTagsMethod = player.javaClass.getMethod("getScoreboardTags")
-                                        val tags = getTagsMethod.invoke(player) as Set<String>
+                val command = when (def.type) {
+                    SettingType.BOOLEAN -> CommandManager.literal(key)
+                        .then(CommandManager.argument("value", BoolArgumentType.bool())
+                            .executes { ctx ->
+                                val value = BoolArgumentType.getBool(ctx, "value")
+                                applySetting(ctx.source, key, value.toString())
+                            })
 
-                                        if (!tags.contains("admin")) {
-                                            source.sendError(Text.literal("このコマンドを実行するには管理者権限が必要です。"))
-                                            return@executes 0
-                                        }
+                    SettingType.STRING -> CommandManager.literal(key)
+                        .then(CommandManager.argument("value", StringArgumentType.word())
+                            .executes { ctx ->
+                                val value = StringArgumentType.getString(ctx, "value")
+                                applySetting(ctx.source, key, value)
+                            })
 
-                                        val success = setConfigValue(source.server, key, value.toString())
-                                        if (success) {
-                                            source.sendFeedback(Text.literal("設定「$key」を「$value」に変更しました。"), false)
-                                            1
-                                        } else {
-                                            source.sendError(Text.literal("設定「$key」の値「$value」が無効です。"))
-                                            0
-                                        }
-                                    }
-                            )
-                    )
-                } else {
-                    // String型設定（例）
-                    root.then(
-                        CommandManager.literal(key)
-                            .then(
-                                CommandManager.argument("value", StringArgumentType.word())
-                                    .executes { context ->
-                                        val value = StringArgumentType.getString(context, "value")
-                                        val source = context.source
-                                        val player = source.entity as? ServerPlayerEntity ?: run {
-                                            source.sendError(Text.literal("このコマンドはプレイヤーのみ実行可能です。"))
-                                            return@executes 0
-                                        }
-                                        val getTagsMethod = player.javaClass.getMethod("getScoreboardTags")
-                                        val tags = getTagsMethod.invoke(player) as Set<String>
-
-                                        if (!tags.contains("admin")) {
-                                            source.sendError(Text.literal("このコマンドを実行するには管理者権限が必要です。"))
-                                            return@executes 0
-                                        }
-
-                                        val success = setConfigValue(source.server, key, value)
-                                        if (success) {
-                                            source.sendFeedback(Text.literal("設定「$key」を「$value」に変更しました。"), false)
-                                            1
-                                        } else {
-                                            source.sendError(Text.literal("設定「$key」の値「$value」が無効です。"))
-                                            0
-                                        }
-                                    }
-                            )
-                    )
+                    SettingType.NUMBER -> CommandManager.literal(key)
+                        .then(CommandManager.argument("value", StringArgumentType.word())
+                            .executes { ctx ->
+                                val valueStr = StringArgumentType.getString(ctx, "value")
+                                val valueInt = valueStr.toIntOrNull()
+                                if (valueInt == null) {
+                                    ctx.source.sendError(Text.literal("数値を入力してください"))
+                                    return@executes 0
+                                }
+                                val constraint = def.numberConstraint
+                                if (constraint != null &&
+                                    (valueInt < constraint.min || valueInt > constraint.max)) {
+                                    ctx.source.sendError(Text.literal("値は ${constraint.min} ～ ${constraint.max} にしてください"))
+                                    return@executes 0
+                                }
+                                applySetting(ctx.source, key, valueInt.toString())
+                            })
                 }
+
+                root.then(command)
             }
 
             dispatcher.register(root)
+        }
+    }
+
+    private fun applySetting(source: ServerCommandSource, key: String, value: String): Int {
+        val player = source.entity as? ServerPlayerEntity ?: run {
+            source.sendError(Text.literal("このコマンドはプレイヤーのみ実行可能です。"))
+            return 0
+        }
+        val getTagsMethod = player.javaClass.getMethod("getScoreboardTags")
+        val tags = getTagsMethod.invoke(player) as Set<String>
+
+        if (!tags.contains("admin")) {
+            source.sendError(Text.literal("このコマンドを実行するには管理者権限が必要です。"))
+            return 0
+        }
+
+        val success = setConfigValue(source.server, key, value)
+        return if (success) {
+            source.sendFeedback(Text.literal("設定「$key」を「$value」に変更しました。"), false)
+            1
+        } else {
+            source.sendError(Text.literal("設定「$key」の値「$value」が無効です。"))
+            0
         }
     }
 
@@ -120,10 +117,7 @@ override fun onInitialize() {
         return configState.setValue(key, value)
     }
 
-
-    // PersistentStateを使ってNBTに保存する例
     class ConfigPersistentState() : PersistentState() {
-
         private val data = mutableMapOf<String, String>()
 
         constructor(nbt: NbtCompound) : this() {
