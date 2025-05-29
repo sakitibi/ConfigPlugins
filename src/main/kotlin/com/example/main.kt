@@ -19,6 +19,7 @@ object ConfigPlugins : ModInitializer {
     enum class SettingType { BOOLEAN, STRING, NUMBER }
 
     data class NumberConstraint(val min: Int, val max: Int)
+    data class NumberConstraintFloat(val min: Float, val max: Float)
     data class ConfigDefinition(
         val type: SettingType,
         val locked: Boolean = false,
@@ -30,7 +31,13 @@ object ConfigPlugins : ModInitializer {
         "tcm" to ConfigDefinition(SettingType.BOOLEAN),
         "settings" to ConfigDefinition(SettingType.STRING),
         // 例 "data" to ConfigDefinition(SettingType.NUMBER, numberConstraint = NumberConstraint(min, max)),
-        "sys" to ConfigDefinition(SettingType.STRING, locked = true)
+        "sys" to ConfigDefinition(SettingType.STRING, locked = true),
+        "anattribute" to ConfigDefinition(SettingType.BOOLEAN),
+        "anim" to ConfigDefinition(SettingType.NUMBER, numberConstraint = NumberConstraint(0, 1)),
+        "inventory_lock" to ConfigDefinition(SettingType.NUMBER, numberConstraint = NumberConstraint(0, 1)),
+        "judge_mode" to ConfigDefinition(SettingType.NUMBER, numberConstraint = NumberConstraint(0, 1)),
+        "12ninAddManager" to ConfigDefinition(SettingType.NUMBER, numberConstraint = NumberConstraint(0, 1)),
+        "login" to ConfigDefinition(SettingType.BOOLEAN, locked = true)
     )
 
     override fun onInitialize() {
