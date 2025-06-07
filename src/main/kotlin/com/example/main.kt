@@ -37,6 +37,7 @@ object ConfigPlugins : ModInitializer {
         "inventory_lock" to ConfigDefinition(SettingType.NUMBER, numberConstraint = NumberConstraint(0, 1)),
         "judge_mode" to ConfigDefinition(SettingType.NUMBER, numberConstraint = NumberConstraint(0, 1)),
         "12ninAddManager" to ConfigDefinition(SettingType.NUMBER, numberConstraint = NumberConstraint(0, 1)),
+        "seer_madness" to ConfigDefinition(SettingType.BOOLEAN),
         "login" to ConfigDefinition(SettingType.BOOLEAN, locked = true)
     )
 
