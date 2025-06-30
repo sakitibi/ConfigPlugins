@@ -1,0 +1,21 @@
+{
+    "schemaVersion": 1,
+    "id": "ConfigPlugins",
+    "version": "3.0.0.0",
+    "name": "Config Plugins",
+    "description": "Copyright SKNewRoles",
+    "authors": ["Sakitibi"],
+    "contact": {},
+    "license": "MIT",
+    "environment": "*",
+    "entrypoints": {
+        "main": [
+            "com.example.Config.Plugins"
+        ]
+    },
+    "depends": {
+        "fabricloader": ">=0.14.21",
+        "fabric": "*",
+        "minecraft": "1.19.4"
+    }
+}
