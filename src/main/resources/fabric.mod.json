@@ -1,7 +1,7 @@
 {
     "schemaVersion": 1,
     "id": "ConfigPlugins",
-    "version": "3.0.0.1",
+    "version": "3.0.0.2",
     "name": "Config Plugins",
     "description": "Copyright SKNewRoles",
     "authors": ["Sakitibi"],
