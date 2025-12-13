@@ -4,7 +4,7 @@ plugins {
 }
 
 group = "config.plugins"
-version = "3.1.0.0"
+version = "3.2.0.0"
 
 repositories {
     maven { url = uri("https://maven.fabricmc.net/") }

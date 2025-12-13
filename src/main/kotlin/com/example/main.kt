@@ -105,10 +105,10 @@ object ConfigPlugins : ModInitializer {
 
         val success = setConfigValue(source.server, key, value)
         return if (success) {
-            source.sendFeedback(Text.literal("設定「$key」を「$value」に変更しました。"), false)
+            source.sendFeedback(Text.literal("設定{$key}を「$value」に変更しました。"), false)
             1
         } else {
-            source.sendError(Text.literal("設定「$key」の値「$value」が無効です。"))
+            source.sendError(Text.literal("Error 設定{$key}の値{$value}が無効です。"))
             0
         }
     }
