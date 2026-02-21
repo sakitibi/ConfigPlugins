@@ -10,7 +10,7 @@
     "environment": "*",
     "entrypoints": {
         "main": [
-            "com.example.Config.Plugins"
+            "com.example.ConfigPlugins"
         ]
     },
     "depends": {

@@ -36,7 +36,7 @@ object ConfigPlugins : ModInitializer {
         "anim" to ConfigDefinition(SettingType.NUMBER, numberConstraint = NumberConstraint(0, 1)),
         "inventory_lock" to ConfigDefinition(SettingType.NUMBER, numberConstraint = NumberConstraint(0, 1)),
         "judge_mode" to ConfigDefinition(SettingType.NUMBER, numberConstraint = NumberConstraint(0, 1)),
-        "13ninAddManager" to ConfigDefinition(SettingType.NUMBER, numberConstraint = NumberConstraint(0, 1)),
+        "13ninAdManager" to ConfigDefinition(SettingType.NUMBER, numberConstraint = NumberConstraint(0, 1)),
         "seer_madness" to ConfigDefinition(SettingType.BOOLEAN),
         "login" to ConfigDefinition(SettingType.BOOLEAN, locked = true),
         "comuner" to ConfigDefinition(SettingType.NUMBER, numberConstraint = NumberConstraint(0, 3))
@@ -95,8 +95,8 @@ object ConfigPlugins : ModInitializer {
             source.sendError(Text.literal("このコマンドはプレイヤーのみ実行可能です。"))
             return 0
         }
-        val getTagsMethod = player.javaClass.getMethod("getScoreboardTags")
-        val tags = getTagsMethod.invoke(player) as Set<String>
+
+        val tags = player.commandTags
 
         if (!tags.contains("admin")) {
             source.sendError(Text.literal("このコマンドを実行するには管理者権限が必要です。"))
