@@ -14,7 +14,7 @@ import net.minecraft.world.PersistentState
 import net.minecraft.world.PersistentStateManager
 import net.minecraft.server.network.ServerPlayerEntity
 
-object ConfigPlugins : ModInitializer {
+class ConfigPlugins : ModInitializer {
 
     enum class SettingType { BOOLEAN, STRING, NUMBER }
 
