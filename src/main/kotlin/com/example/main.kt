@@ -104,6 +104,10 @@ object ConfigPlugins : ModInitializer {
         }
 
         val success = setConfigValue(source.server, key, value)
+        if (!success) {
+            source.sendError(Text.literal("ワールドがまだ初期化されていません。"))
+            return 0
+        }
         return if (success) {
             source.sendFeedback(Text.literal("設定{$key}を「$value」に変更しました。"), false)
             1
@@ -114,7 +118,9 @@ object ConfigPlugins : ModInitializer {
     }
 
     private fun setConfigValue(server: MinecraftServer, key: String, value: String): Boolean {
-        val overworld = server.overworld
+        val overworld = server.getWorld(net.minecraft.world.World.OVERWORLD)
+            ?: return false
+
         val stateManager = overworld.persistentStateManager
 
         val configState = stateManager.getOrCreate(
